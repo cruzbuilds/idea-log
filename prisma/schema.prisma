@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IdeaStatus {
+  ACTIVE
+  DONE
+  ABANDONED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  ideas Idea[]
+}
+
+model Idea {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String     @default("")
+  status      IdeaStatus @default(ACTIVE)
+
+  // Prediction scores, each 1-5, recorded when the idea is logged.
+  differentiation Int
+  evidence        Int
+  cost            Int
+  reversibility   Int
+
+  // Hindsight: filled in once the idea is finished or abandoned.
+  outcome            String?
+  outcomeRecordedAt  DateTime?
+  hDifferentiation   Int?
+  hEvidence          Int?
+  hCost              Int?
+  hReversibility     Int?
+
+  // Set when the idea is shared publicly via link; null = not shared.
+  shareToken String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, status])
+}
